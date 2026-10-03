@@ -33,11 +33,14 @@ It wrote the code, ran away, and now the game is unplayable.
 
 Describe your fixed game in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. Choose Difficuly "Easy"
+2. User enters "Hello"
+3. Game outputs error message "Not a number", attempt not used
+4. User clicks Show Hints
+5. User enters 14
+6. Game outputs hint message saying "GO HIGHER"
+7. Score updates correctly after each guess, attempt used correctly as well
+8. Game ends after user enters the correct guess
 
 **Screenshot** *(optional)*: <!-- Insert a screenshot of your fixed, winning game here -->
 
