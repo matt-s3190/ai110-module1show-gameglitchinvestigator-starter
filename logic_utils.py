@@ -1,7 +1,87 @@
+"""Core game logic for the Glitchy Guesser.
+
+Nothing in this file imports Streamlit. Every function takes plain values
+(or a dict-like `state`) and returns plain values, so it can be unit tested
+with pytest without running the UI.
+
+NOTE: This is a pure refactor. Behavior was moved here unchanged from app.py,
+bugs included, so they can be isolated and fixed one at a time.
+"""
+
+import random
+
+
+# ---------------------------------------------------------------------------
+# Difficulty settings
+# ---------------------------------------------------------------------------
+
+DIFFICULTIES = ["Easy", "Normal", "Hard"]
+DEFAULT_DIFFICULTY_INDEX = 1
+
+ATTEMPT_LIMITS = {
+    "Easy": 6,
+    "Normal": 8,
+    "Hard": 5,
+}
+
+
 def get_range_for_difficulty(difficulty: str):
     """Return (low, high) inclusive range for a given difficulty."""
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if difficulty == "Easy":
+        return 1, 20
+    if difficulty == "Normal":
+        return 1, 100
+    if difficulty == "Hard":
+        return 1, 50
+    return 1, 100
 
+
+def get_attempt_limit(difficulty: str):
+    """Return how many attempts are allowed for a given difficulty."""
+    return ATTEMPT_LIMITS[difficulty]
+
+
+# ---------------------------------------------------------------------------
+# Secret number / game state
+# ---------------------------------------------------------------------------
+
+def generate_secret(low: int, high: int):
+    """Pick a random secret number in [low, high]."""
+    return random.randint(low, high)
+
+
+def initial_state(low: int, high: int):
+    """Default values for a brand-new session."""
+    return {
+        "secret": generate_secret(low, high),
+        "attempts": 1,
+        "score": 0,
+        "status": "playing",
+        "history": [],
+    }
+
+
+def init_state(state, low: int, high: int):
+    """Fill in any missing keys in `state` with their defaults."""
+    for key, value in initial_state(low, high).items():
+        if key not in state:
+            state[key] = value
+
+
+def start_new_game(state):
+    """Reset `state` when the player clicks New Game."""
+    state["attempts"] = 0
+    state["secret"] = generate_secret(1, 100)
+
+
+def attempts_left(attempt_limit: int, attempts: int):
+    """Number of attempts remaining."""
+    return attempt_limit - attempts
+
+
+# ---------------------------------------------------------------------------
+# Guess handling
+# ---------------------------------------------------------------------------
 
 def parse_guess(raw: str):
     """
@@ -9,7 +89,28 @@ def parse_guess(raw: str):
 
     Returns: (ok: bool, guess_int: int | None, error_message: str | None)
     """
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if raw is None:
+        return False, None, "Enter a guess."
+
+    if raw == "":
+        return False, None, "Enter a guess."
+
+    try:
+        if "." in raw:
+            value = int(float(raw))
+        else:
+            value = int(raw)
+    except Exception:
+        return False, None, "That is not a number."
+
+    return True, value, None
+
+
+def secret_for_comparison(secret, attempts: int):
+    """Return the secret value used when checking a guess on this attempt."""
+    if attempts % 2 == 0:
+        return str(secret)
+    return secret
 
 
 def check_guess(guess, secret):
@@ -18,9 +119,83 @@ def check_guess(guess, secret):
 
     outcome examples: "Win", "Too High", "Too Low"
     """
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if guess == secret:
+        return "Win", "🎉 Correct!"
+
+    try:
+        if guess > secret:
+            return "Too High", "📈 Go HIGHER!"
+        else:
+            return "Too Low", "📉 Go LOWER!"
+    except TypeError:
+        g = str(guess)
+        if g == secret:
+            return "Win", "🎉 Correct!"
+        if g > secret:
+            return "Too High", "📈 Go HIGHER!"
+        return "Too Low", "📉 Go LOWER!"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
     """Update score based on outcome and attempt number."""
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if outcome == "Win":
+        points = 100 - 10 * (attempt_number + 1)
+        if points < 10:
+            points = 10
+        return current_score + points
+
+    if outcome == "Too High":
+        if attempt_number % 2 == 0:
+            return current_score + 5
+        return current_score - 5
+
+    if outcome == "Too Low":
+        return current_score - 5
+
+    return current_score
+
+
+def process_guess(state, raw_guess: str, attempt_limit: int):
+    """
+    Run one full turn: count the attempt, parse the guess, check it,
+    update score/history/status in `state`.
+
+    Returns a result dict the UI can render:
+        {
+            "error":   str | None,   # invalid input message
+            "outcome": str | None,   # "Win" / "Too High" / "Too Low"
+            "message": str | None,   # hint text
+            "status":  str,          # "playing" / "won" / "lost"
+        }
+    """
+    result = {"error": None, "outcome": None, "message": None, "status": state["status"]}
+
+    state["attempts"] += 1
+
+    ok, guess_int, err = parse_guess(raw_guess)
+
+    if not ok:
+        state["history"].append(raw_guess)
+        result["error"] = err
+        return result
+
+    state["history"].append(guess_int)
+
+    secret = secret_for_comparison(state["secret"], state["attempts"])
+    outcome, message = check_guess(guess_int, secret)
+    result["outcome"] = outcome
+    result["message"] = message
+
+    state["score"] = update_score(
+        current_score=state["score"],
+        outcome=outcome,
+        attempt_number=state["attempts"],
+    )
+
+    if outcome == "Win":
+        state["status"] = "won"
+    elif state["attempts"] >= attempt_limit:
+        state["status"] = "lost"
+
+    result["status"] = state["status"]
+    return result
