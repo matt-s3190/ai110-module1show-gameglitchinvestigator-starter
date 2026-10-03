@@ -5,8 +5,13 @@ Answer each question in 3 to 5 sentences. Be specific and honest about what actu
 ## 1. What was broken when you started?
 
 - What did the game look like the first time you ran it?
-- List at least two concrete bugs you noticed at the start  
-  (for example: "the hints were backwards").
+
+  It seemed normal at first. Every widget was aligned as it should, a line edit to place my guess and three consecutive buttons to submit my guess, create a new game, and show me a hint. In addition, the title and instruction of the game is rendered correctly.
+- List at least two concrete bugs you noticed at the start
+  - Selecting a different diffucilty changes the range shown below the dropdown, but the range shown in the main page stays the same
+  - Switching difficulties midway through a game doesn't reset my attempt counter and my guess history.
+
+  
 
 **Bug Reproduction Log**
 
@@ -14,9 +19,9 @@ Document at least 3 bugs you found. Add rows as needed.
 
 | Input | Expected Behavior | Actual Behavior | Console Output / Error |
 |-------|-------------------|-----------------|------------------------|
-| | | | |
-| | | | |
-| | | | |
+| Clicking on new game button after finishing a game | Refresh my screen and reset my attempts | Nothing happens. Screen stays the same and no reset occurs | "None" |
+| Repeatedly submitting a invalid guess (i.e "True", -1) | Display a warning message telling me my guess is invalid and not decrement my attempts | Shows a warning message but my "Attempts left: " counter decreases by 1 with each submission | "None" |
+| Guessing a number following the hint indicator (i.e. "LOWER" or "HIGHER") | Helps me find the correct number more easier with less attempts | Incorrectly leads me farther away from the correct number | "None" |
 
 ---
 
