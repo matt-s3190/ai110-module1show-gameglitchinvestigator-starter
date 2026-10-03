@@ -83,15 +83,18 @@ def attempts_left(attempt_limit: int, attempts: int):
 # Guess handling
 # ---------------------------------------------------------------------------
 
-def parse_guess(raw: str):
+def parse_guess(raw: str, low: int = None, high: int = None):
     """
     Parse user input into an int guess.
+
+    If `low` and `high` are given, guesses outside [low, high] are rejected.
 
     Returns: (ok: bool, guess_int: int | None, error_message: str | None)
     """
     if raw is None:
         return False, None, "Enter a guess."
 
+    raw = raw.strip()
     if raw == "":
         return False, None, "Enter a guess."
 
@@ -102,6 +105,9 @@ def parse_guess(raw: str):
             value = int(raw)
     except Exception:
         return False, None, "That is not a number."
+
+    if low is not None and high is not None and not (low <= value <= high):
+        return False, None, f"Guess must be between {low} and {high}."
 
     return True, value, None
 
@@ -149,10 +155,11 @@ def update_score(current_score: int, outcome: str, attempt_number: int):
     return current_score
 
 
-def process_guess(state, raw_guess: str, attempt_limit: int):
+def process_guess(state, raw_guess: str, attempt_limit: int, low: int = None, high: int = None):
     """
-    Run one full turn: count the attempt, parse the guess, check it,
-    update score/history/status in `state`.
+    Run one full turn: parse the guess, and only if it is valid, count the
+    attempt, check it, and update score/history/status in `state`.
+    Invalid guesses return an error and leave `state` untouched.
 
     Returns a result dict the UI can render:
         {
@@ -164,15 +171,14 @@ def process_guess(state, raw_guess: str, attempt_limit: int):
     """
     result = {"error": None, "outcome": None, "message": None, "status": state["status"]}
 
-    state["attempts"] += 1
-
-    ok, guess_int, err = parse_guess(raw_guess)
+    ok, guess_int, err = parse_guess(raw_guess, low, high)
 
     if not ok:
-        state["history"].append(raw_guess)
         result["error"] = err
         return result
 
+    # Only a valid guess costs an attempt.
+    state["attempts"] += 1
     state["history"].append(guess_int)
 
     secret = secret_for_comparison(state["secret"], state["attempts"])

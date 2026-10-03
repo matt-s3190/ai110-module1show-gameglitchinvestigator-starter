@@ -37,7 +37,7 @@ if state.status != "playing":
     st.stop()
 
 if submit:
-    result = game.process_guess(state, raw_guess, attempt_limit)
+    result = game.process_guess(state, raw_guess, attempt_limit, low, high)
     ui.render_guess_result(result, show_hint, state.secret, state.score)
 
 ui.render_footer()
