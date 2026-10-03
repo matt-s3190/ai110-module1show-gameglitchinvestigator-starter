@@ -107,12 +107,15 @@ def parse_guess(raw: str):
 
 
 def secret_for_comparison(secret, attempts: int):
-    """Return the secret value used when checking a guess on this attempt."""
-    if attempts % 2 == 0:
-        return str(secret)
-    return secret
+    """Return the secret value used when checking a guess on this attempt.
 
+    Always returns the secret as an int so guesses are compared numerically.
+    (Previously it returned str(secret) on even attempts, which caused
+    alphabetical comparisons like "9" > "50".)
+    """
+    return int(secret)
 
+# FIXME: Checking guess logic breaks here
 def check_guess(guess, secret):
     """
     Compare guess to secret and return (outcome, message).
@@ -122,18 +125,9 @@ def check_guess(guess, secret):
     if guess == secret:
         return "Win", "🎉 Correct!"
 
-    try:
-        if guess > secret:
-            return "Too High", "📈 Go HIGHER!"
-        else:
-            return "Too Low", "📉 Go LOWER!"
-    except TypeError:
-        g = str(guess)
-        if g == secret:
-            return "Win", "🎉 Correct!"
-        if g > secret:
-            return "Too High", "📈 Go HIGHER!"
-        return "Too Low", "📉 Go LOWER!"
+    if guess > secret:
+        return "Too High", "📉 Go LOWER!"
+    return "Too Low", "📈 Go HIGHER!"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
