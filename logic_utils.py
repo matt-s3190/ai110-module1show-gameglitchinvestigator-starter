@@ -106,12 +106,14 @@ def parse_guess(raw: str, low: int = None, high: int = None):
     except Exception:
         return False, None, "That is not a number."
 
+    # FIX: Claude traced the "invalid guess uses an attempt" bug here; out-of-range guesses like -1 were accepted. Added a range check; verified with pytest.
     if low is not None and high is not None and not (low <= value <= high):
         return False, None, f"Guess must be between {low} and {high}."
 
     return True, value, None
 
 
+# FIX: Claude found this second cause of the wrong-hint bug while checking my FIXME; secret became a string on even attempts. Now always an int.
 def secret_for_comparison(secret, attempts: int):
     """Return the secret value used when checking a guess on this attempt.
 
@@ -121,7 +123,7 @@ def secret_for_comparison(secret, attempts: int):
     """
     return int(secret)
 
-# FIXME: Checking guess logic breaks here
+# FIX: I flagged this function with a FIXME; Claude confirmed the HIGHER/LOWER messages were swapped, fixed them, and removed the string-compare fallback.
 def check_guess(guess, secret):
     """
     Compare guess to secret and return (outcome, message).
@@ -177,7 +179,7 @@ def process_guess(state, raw_guess: str, attempt_limit: int, low: int = None, hi
         result["error"] = err
         return result
 
-    # Only a valid guess costs an attempt.
+    # FIX: Claude found attempts were counted before validation; moved the increment here so only a valid guess costs an attempt. Verified with pytest.
     state["attempts"] += 1
     state["history"].append(guess_int)
 

@@ -37,6 +37,7 @@ if state.status != "playing":
     st.stop()
 
 if submit:
+    # FIX: Claude passed the difficulty range (low, high) so process_guess can reject out-of-range guesses.
     result = game.process_guess(state, raw_guess, attempt_limit, low, high)
     ui.render_guess_result(result, show_hint, state.secret, state.score)
 

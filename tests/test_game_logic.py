@@ -2,6 +2,7 @@ import pytest
 
 from logic_utils import check_guess, process_guess
 
+# FIX: My pytest run showed these 3 tests failing; Claude explained check_guess returns (outcome, message), so the tests now unpack the outcome.
 def test_winning_guess():
     # If the secret is 50 and guess is 50, it should be a win
     outcome, message = check_guess(50, 50)
